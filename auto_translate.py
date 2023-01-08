@@ -5,7 +5,6 @@
 import argparse
 import googletrans
 import io
-import json
 import os
 from   pathlib import Path
 import polib
@@ -22,15 +21,14 @@ RST=colorama.Style.RESET_ALL
 _my_name = os.path.basename(__file__)
 _my_input_default = 'my_strings.po'
 _my_output_default = 'auto_strings.po'
-_my_json_error_default = 'translate_errors.json'
 
 DESCRIPTION = """
-You may need to install googletrans
+You may need to install googletrans, e.g.
 >  pip install googletrans==4.0.0rc1
 
 Opens the INFILE
 and google-translates to the language selected
-Replace all (-r), or just fill in the missing (-f), 'msgstr',
+Replace all (-r), or just fill in the missing translations ('msgstr':s),
 insert translations from TRANSFILE
 and save to OUTFILE
 """
@@ -39,7 +37,7 @@ Examples:
 > ./{_my_name} -i test.po -l danish --replace -o test.da.po
 
 In case you did not get them all, or already have most of them:
-> ./{_my_name} -i test.da.po -l danish --fill -o test.da.po
+> ./{_my_name} -i test.da.po -l danish -o test.da.po
 """
 
 #-------------------------------------------------------------------------------
@@ -48,13 +46,9 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.dedent(DESCRIPTION),
         epilog=textwrap.dedent(USAGE_EXAMPLE))
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-r', '--replace', action='store_true',
-        help='replace all translations')
-    group.add_argument('-f', '--fill', action='store_true',
-        help='insert only the missing translations')
-
     add = parser.add_argument
+    add('-r', '--replace', action='store_true',
+        help='replace all translations')
     add('-q', '--quiet', action='store_true',
         help='be more quiet')
     add('-v', '--verbose', action='store_true',
