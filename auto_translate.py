@@ -3,7 +3,12 @@
 #----------------------------------------------------------------------
 
 import argparse
-import googletrans
+try:
+    import googletrans
+except ModuleNotFoundError:
+    print('You need to install googletrans.  If you have no better idea, try:')
+    print('pip install googletrans==4.0.0rc1')
+    exit(1)
 import io
 import os
 from   pathlib import Path
@@ -26,15 +31,16 @@ DESCRIPTION = """
 You may need to install googletrans, e.g.
 >  pip install googletrans==4.0.0rc1
 
-Opens the INFILE
-and google-translates to the language selected
+Opens the INFILE, assumed to be in 'english',
+and google-translates to the language selected as --language
 Replace all (-r), or just fill in the missing translations ('msgstr':s),
-insert translations from TRANSFILE
 and save to OUTFILE
 """
 USAGE_EXAMPLE = f"""
 Examples:
-> ./{_my_name} -i test.po -l danish --replace -o test.da.po
+> ./{_my_name} -i input.pot -l danish -o output.da.po
+
+> ./{_my_name} -i input.po -l danish -o output.da.po --replace
 
 In case you did not get them all, or already have most of them:
 > ./{_my_name} -i test.da.po -l danish -o test.da.po
@@ -48,7 +54,7 @@ def parse_arguments():
         epilog=textwrap.dedent(USAGE_EXAMPLE))
     add = parser.add_argument
     add('-r', '--replace', action='store_true',
-        help='replace all translations')
+        help='replace all translations (if using a .po file)')
     add('-q', '--quiet', action='store_true',
         help='be more quiet')
     add('-v', '--verbose', action='store_true',
@@ -60,7 +66,7 @@ def parse_arguments():
         help='.po or .pot file for extraction')
     add('-o', '--output', metavar='OUTFILE',
         default=_my_output_default,
-        help='output file (.po or .pot) with results')
+        help='output .po file with results')
 
     return parser.parse_args()
 
@@ -148,6 +154,8 @@ def translate_gettext_file(file_name, language, options):
         print('Everything is translated')
     if translations:
         pofile.save(options.output)
+    else:
+        print('  or did you forget --replace?')
 
 #-------------------------------------------------------------------------------
 #
