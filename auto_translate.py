@@ -13,6 +13,7 @@ import io
 import os
 from   pathlib import Path
 import polib
+import re
 import sys
 import textwrap
 import time
@@ -61,6 +62,10 @@ def parse_arguments():
         help='be more verbose')
     add('-l', '--language', metavar='LANGUAGE',
         help='select language')
+    add('-w', '--wrapwidth', metavar='LANGUAGE',
+        type=int,
+        default=0,
+        help='wrap column, 0 -> no wrap')
     add('-i', '--input', metavar='INFILE',
         required=True,
         help='.po or .pot file for extraction')
@@ -82,6 +87,48 @@ def has_valid_text(the_string):
     return False
 
 #-------------------------------------------------------------------------------
+def filter_et_string(in_string):
+    if ' && ' in in_string:
+        return in_string, ""
+    if not '&' in in_string:
+        return in_string, ""
+    index = in_string.find('&')
+    et_string = '('+ in_string[index:index+2] + ')'
+    out_string = in_string[:index] + in_string[index+1:]
+    return out_string, et_string
+
+#-------------------------------------------------------------------------------
+def try_to_restore_percent_variables(source, proposal):
+    if not '%' in source:
+        return proposal
+    source_pattern = '%(\d)+%'
+    matches = re.findall(source_pattern, source)
+    if not matches:
+        return proposal
+
+    try:
+        for match in matches:
+            wanted = '%'+match+'%'
+            if wanted in proposal:
+                continue
+            suspects = [
+                '% ' + match + '%',
+                '% ' + match + ' %',
+                '%' + match + ' %',
+                ]
+            for suspect in suspects:
+                if suspect in proposal:
+                    proposal = proposal.replace(suspect, wanted)
+                    break
+    except Exception as e:
+        print(e.message)
+        print(f'{source = }')
+        print(f'{proposal = }')
+        sys.exit(3)
+
+    return proposal
+
+#-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
 def translate_gettext_file(file_name, language, options):
@@ -89,7 +136,7 @@ def translate_gettext_file(file_name, language, options):
     Look for msgid's then translate their msgstr to language,
     note that these files are (expected to be) coded as UTF-8
     '''
-    pofile = polib.pofile(file_name)
+    pofile = polib.pofile(file_name, wrapwidth=options.wrapwidth)
 
     translator = googletrans.Translator()
 
@@ -108,8 +155,6 @@ def translate_gettext_file(file_name, language, options):
         source = entry.msgid
         if options.verbose:
             print(f'In: "{source}"')
-        else:
-            print('.', end="")
         if not source:
             continue
         if not has_valid_text(source):
@@ -123,13 +168,16 @@ def translate_gettext_file(file_name, language, options):
                     continue
             retries = 5
             untranslated = True
+            source, et_string = filter_et_string(source)
             while retries:
                 try:
-                    proposal = translator.translate(source, src='english', dest=language)
-                    result = proposal.text
-                except:
+                    proposal = translator.translate(source, src='english', dest=language).text
+                    proposal = try_to_restore_percent_variables(source, proposal)
+                    result = proposal + et_string
+                except Exception as e:
                     retries -= 1
-                    print(f'Exception, will try {retries} more after sleeping')
+                    print(f'Translate for : "{source = }" failed')
+                    print(f'Exception: {e}, will try {retries} more after sleeping')
                     time.sleep(1)
                     result = ""
                 else:
