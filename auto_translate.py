@@ -12,7 +12,12 @@ except ModuleNotFoundError:
 import io
 import os
 from   pathlib import Path
-import polib
+try:
+    import polib
+except ModuleNotFoundError:
+    print('You need to install polib.  If you have no better idea, try:')
+    print('pip install polib')
+    exit(1)
 import re
 import sys
 import textwrap
@@ -30,7 +35,9 @@ _my_output_default = 'auto_strings.po'
 
 DESCRIPTION = """
 You may need to install googletrans, e.g.
->  pip install googletrans==4.0.0rc1
+>  pip install googletrans
+and polib
+>  pip install polib
 
 Opens the INFILE, assumed to be in 'english',
 and google-translates to the language selected as --language
@@ -41,7 +48,7 @@ USAGE_EXAMPLE = f"""
 Examples:
 > ./{_my_name} -i input.pot -l danish -o output.da.po
 
-> ./{_my_name} -i input.po -l danish -o output.da.po --replace
+> ./{_my_name} -i test.po -l danish -o test.da.po --replace
 
 In case you did not get them all, or already have most of them:
 > ./{_my_name} -i test.da.po -l danish -o test.da.po
@@ -62,7 +69,7 @@ def parse_arguments():
         help='be more verbose')
     add('-l', '--language', metavar='LANGUAGE',
         help='select language')
-    add('-w', '--wrapwidth', metavar='LANGUAGE',
+    add('-w', '--wrapwidth', metavar='WIDTH',
         type=int,
         default=0,
         help='wrap column, 0 -> no wrap')
