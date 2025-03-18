@@ -6,7 +6,7 @@ You may need to install googletrans 4.0.0rc1, e.g.
 
 and polib
 >  pip install polib
-
+~~~
 usage: auto_translate.py [-h] [-r] [-q] [-v] [-l LANGUAGE] [-w WIDTH] -i INFILE [-o OUTFILE]
 
 Opens the INFILE, assumed to be in 'english',
@@ -35,3 +35,4 @@ Examples:
 
 In case you did not get them all, or already have most of them:
 > ./auto_translate.py -i test.da.po -l danish -o test.da.po
+~~~
