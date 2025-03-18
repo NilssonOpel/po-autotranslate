@@ -3,6 +3,7 @@ Translate .po file using googletrans
 
 You may need to install googletrans 4.0.0rc1, e.g.
 >  pip install googletrans==4.0.0rc1
+
 and polib
 >  pip install polib
 
